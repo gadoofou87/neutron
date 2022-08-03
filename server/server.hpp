@@ -1,23 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <string_view>
-
-namespace detail {
-
-class ServerPrivate;
-
-}
-
 class Server {
  public:
-  explicit Server();
-  ~Server();
-
-  void start(std::string_view config_path);
-
-  void stop();
+  static void start(int argc, char *argv[]);
 
  private:
-  const std::unique_ptr<detail::ServerPrivate> impl_;
+  Server() = default;
 };

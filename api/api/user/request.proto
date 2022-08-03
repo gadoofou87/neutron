@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.user;
+
+message Request {
+    enum Type {
+        CREATE_CONNECTION = 0;
+        DELETE_CONNECTION = 1;
+        EDIT_PASSWORD = 2;
+        EDIT_PHOTO = 3;
+        GET_CONNECTIONS = 4;
+        GET_INFO = 5;
+        LOGOUT = 6;
+        REVOKE_DEVICE = 7;
+        SIGN_IN = 8;
+        SIGN_UP = 9;
+        UPLOAD_ONE_TIME_KEY = 10;
+    }
+    Type type = 1;
+    bytes data = 2;
+}

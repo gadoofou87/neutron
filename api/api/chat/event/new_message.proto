@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "api/chat/message.proto";
+
+package api.chat.event;
+
+message NewMessage {
+    api.chat.Message message = 1;
+}

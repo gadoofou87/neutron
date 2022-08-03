@@ -60,34 +60,34 @@ using namespace protocol::detail;
 template <typename... Tags>
 class BufferBuilder<EncryptedPacketData, Tags...> {
  public:
-  static constexpr size_t overhead_size =
+  static constexpr size_t static_size =
       sizeof(EncryptedPacketData::mac_type) + sizeof(EncryptedPacketData::nonce_type);
 
  public:
-  BufferBuilder() : data_size_(0) {}
+  BufferBuilder() : dynamic_size_(0) {}
 
   auto build() { return std::vector<uint8_t>(buffer_size()); }
 
-  size_t buffer_size() { return overhead_size + data_size(); }
+  size_t buffer_size() { return static_size + dynamic_size(); }
 
-  size_t data_size() {
+  size_t dynamic_size() {
     static_assert((std::is_same_v<Tags, BufferBuilderTag<0>> || ...), "data size is not set");
 
-    return data_size_;
+    return dynamic_size_;
   }
 
   [[nodiscard]] auto set_data_size(size_t size) {
     static_assert((!std::is_same_v<Tags, BufferBuilderTag<0>> && ...), "data size is already set");
 
     return BufferBuilder<EncryptedPacketData, BufferBuilderTag<0>, Tags...>{
-        data_size_ + sizeof(EncryptedPacketData::data_type::value_type) * size};
+        dynamic_size_ + sizeof(EncryptedPacketData::data_type::value_type) * size};
   }
 
  private:
-  BufferBuilder(size_t data_size) : data_size_(data_size) {}
+  BufferBuilder(size_t dynamic_size) : dynamic_size_(dynamic_size) {}
 
  private:
-  size_t data_size_;
+  size_t dynamic_size_;
 
  private:
   template <typename, typename...>

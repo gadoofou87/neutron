@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api.chat.response;
+
+message GetChats {
+    message Result {
+        message Value {
+            uint64 chat_id = 1;
+            uint64 last_event_timestamp = 2;
+        }
+        repeated Value values = 1;
+    }
+    message Error {
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

@@ -6,7 +6,6 @@
 #include <optional>
 
 #include "utils/abstract/iresetable.hpp"
-#include "utils/optional_ref.hpp"
 #include "utils/parentable.hpp"
 
 namespace protocol {
@@ -19,7 +18,7 @@ class NetworkManager : public utils::Parentable<ConnectionPrivate>, utils::IRese
  public:
   using Parentable::Parentable;
 
-  bool is_receiving() const;
+  [[nodiscard]] bool is_receiving() const;
 
   void reset() override;
 
@@ -33,7 +32,8 @@ class NetworkManager : public utils::Parentable<ConnectionPrivate>, utils::IRese
 
   void stop_receive();
 
-  void write_pending_packets(bool async = true);
+  template <bool Async = true>
+  void write_pending_packets();
 
  private:
   static void async_receive_rx_socket_handler(ConnectionPrivate& parent, std::vector<uint8_t> data,

@@ -1,5 +1,8 @@
 #include "client_p.hpp"
+#include "detail/api/structures/event.hpp"
+#include "detail/api/structures/exception.hpp"
 #include "detail/api/structures/request.hpp"
+#include "detail/api/structures/response.hpp"
 #include "utils/debug/assert.hpp"
 #include "utils/span/copy.hpp"
 
@@ -16,11 +19,7 @@ Client::~Client() = default;
 bool Client::has_pending_events() const {
   std::unique_lock lock(impl_->mutex);
 
-  if (!is_open()) {
-    throw std::runtime_error("is not open");
-  }
-
-  return !impl_->pending_notifications.empty();
+  return !impl_->pending_events.empty();
 }
 
 std::optional<std::vector<uint8_t>> Client::next_pending_event() {
@@ -30,17 +29,18 @@ std::optional<std::vector<uint8_t>> Client::next_pending_event() {
     throw std::runtime_error("is not open");
   }
 
-  if (impl_->pending_notifications.empty()) {
+  if (impl_->pending_events.empty()) {
     return std::nullopt;
   }
 
-  auto notification = std::move(impl_->pending_notifications.front());
-  impl_->pending_notifications.pop_front();
+  auto event = std::move(impl_->pending_events.front());
+  impl_->pending_events.pop_front();
 
-  return notification;
+  return event;
 }
 
-void Client::send_request(std::span<const uint8_t> data, const ResponseCallback &on_response,
+void Client::send_request(size_t stream_identifier, std::span<const uint8_t> data,
+                          const ResponseCallback &on_response,
                           const ExceptionCallback &on_exception) {
   if (on_response == nullptr) {
     throw std::runtime_error("on_response is null");
@@ -53,18 +53,21 @@ void Client::send_request(std::span<const uint8_t> data, const ResponseCallback 
   }
 
   if (impl_->can_send_request()) {
-    impl_->send_request(data, on_response, on_exception);
+    impl_->send_request(stream_identifier, data, on_response, on_exception);
   } else {
-    impl_->queue_up_request(data, on_response, on_exception);
+    impl_->queue_up_request(stream_identifier, data, on_response, on_exception);
   }
 }
 
-std::shared_ptr<Client::NewEventEvent> Client::new_event() const { return impl_->new_event_event; }
-
-ClientPrivate::ClientPrivate() : new_event_event(Client::NewEventEvent::create()){};
+ClientPrivate::ClientPrivate() = default;
 
 ClientPrivate::~ClientPrivate() = default;
 
+bool ClientPrivate::can_send_request() const {
+  return unresponded_requests.size() <= std::numeric_limits<RequestIdentifier>::max();
+}
+
+template <>
 void ClientPrivate::handle(Event event) {
   if (!event.validate()) {
     return;
@@ -73,14 +76,12 @@ void ClientPrivate::handle(Event event) {
   std::vector<uint8_t> data(event.data().size());
   std::memcpy(data.data(), event.data().data(), data.size());
 
-  pending_notifications.push_back(std::move(data));
+  pending_events.push_back(std::move(data));
 
   new_event_event->emit();
 }
-bool ClientPrivate::can_send_request() const {
-  return unresponded_requests.size() <= std::numeric_limits<RequestIdentifier>::max();
-}
 
+template <>
 void ClientPrivate::handle(Exception exception) {
   if (!exception.validate()) {
     return;
@@ -101,6 +102,7 @@ void ClientPrivate::handle(Exception exception) {
   unresponded_requests.erase(unresponded_requests_iterator);
 }
 
+template <>
 void ClientPrivate::handle(Response response) {
   if (!response.validate()) {
     return;
@@ -132,16 +134,16 @@ void ClientPrivate::handle(Response response) {
   }
 }
 
-void ClientPrivate::queue_up_request(std::span<const uint8_t> data,
+void ClientPrivate::queue_up_request(size_t stream_identifier, std::span<const uint8_t> data,
                                      const Client::ResponseCallback &on_response,
                                      const Client::ExceptionCallback &on_exception) {
   std::vector<uint8_t> data_copy(data.size());
   std::memcpy(data_copy.data(), data.data(), data_copy.size());
 
-  unsent_requests.emplace_back(std::move(data_copy), on_response, on_exception);
+  unsent_requests.emplace_back(stream_identifier, std::move(data_copy), on_response, on_exception);
 }
 
-void ClientPrivate::send_request(std::span<const uint8_t> data,
+void ClientPrivate::send_request(size_t stream_identifier, std::span<const uint8_t> data,
                                  const Client::ResponseCallback &on_response,
                                  const Client::ExceptionCallback &on_exception) {
   auto buffer = serialization::BufferBuilder<Request>{}.set_data_size(data.size()).build();
@@ -152,12 +154,12 @@ void ClientPrivate::send_request(std::span<const uint8_t> data,
 
   utils::span::copy<uint8_t>(request.data(), data);
 
-  send_message(MessageType::Request, std::move(buffer));
+  send_message(stream_identifier, MessageType::Request, std::move(buffer));
 
   unresponded_requests.emplace(request.id(), std::make_tuple(on_response, on_exception));
 }
 
-void ClientPrivate::message_handler(Message message) {
+void ClientPrivate::message_handler([[maybe_unused]] size_t stream_identifier, Message message) {
   switch (message.type()) {
     case MessageType::Event:
       handle(Event(message.data()));

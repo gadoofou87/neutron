@@ -18,13 +18,15 @@ class ConnectionPrivate;
 class PacketBuilder : public utils::Parentable<ConnectionPrivate>, utils::IResetable {
  public:
   using BuildInput =
-      std::list<std::pair<ChunkType, std::reference_wrapper<const std::vector<uint8_t>>>>;
+      std::vector<std::pair<ChunkType, std::reference_wrapper<const std::vector<uint8_t>>>>;
+  using BuildOutput = std::list<std::vector<uint8_t>>;
+
   using Mtu = uint16_t;
 
  public:
   explicit PacketBuilder(parent_type& parent);
 
-  std::list<std::vector<uint8_t>> build(BuildInput&& input);
+  BuildOutput build(BuildInput&& input);
 
   [[nodiscard]] size_t max_chunk_data_size(ChunkType type) const;
 
@@ -35,7 +37,8 @@ class PacketBuilder : public utils::Parentable<ConnectionPrivate>, utils::IReset
   void set_mtu(Mtu mtu);
 
  private:
-  std::list<std::vector<uint8_t>> build(std::list<std::vector<uint8_t>>&& chunks, bool encrypted);
+  template <bool Encrypted>
+  BuildOutput build(std::list<std::vector<uint8_t>>&& chunks);
 
   std::vector<uint8_t> build_chunk_list(std::list<std::vector<uint8_t>>& chunks,
                                         size_t cached_max_chunk_list_size);

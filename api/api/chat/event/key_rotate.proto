@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "api/user/one_time_key.proto";
+
+package api.chat.event;
+
+message KeyRotate {
+    message Value {
+        uint64 user_id = 1;
+        uint32 device_id = 2;
+        api.user.OneTimeKey one_time_key = 3;
+    }
+    repeated Value values = 1;
+}

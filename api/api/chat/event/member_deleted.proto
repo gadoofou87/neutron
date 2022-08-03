@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package api.chat.event;
+
+message MemberDeleted {
+    uint64 user_id = 1;
+}

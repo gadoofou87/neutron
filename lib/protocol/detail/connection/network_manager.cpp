@@ -50,7 +50,7 @@ void NetworkManager::start_receive() {
 
   async_recursive_read_datagram(
       parent().strand, rx_socket_, [weak_parent = parent().weak_from_this()](auto&&... args) {
-        if (auto parent = weak_parent.lock()) {
+        if (auto parent = weak_parent.lock()) [[likely]] {
           async_receive_rx_socket_handler(*parent, std::forward<decltype(args)>(args)...);
         }
       });
@@ -67,19 +67,26 @@ void NetworkManager::stop_receive() {
   receiving_ = false;
 }
 
-void NetworkManager::write_pending_packets(bool async) {
+template <>
+void NetworkManager::write_pending_packets<false>() {
   ASSERT(tx_socket_ != nullptr);
 
   auto packets = gather_outbound();
 
-  if (async) {
-    for (auto& packet : packets) {
-      async_send_datagram(*tx_socket_, tx_endpoint_, std::move(packet));
-    }
-  } else {
-    for (auto& packet : packets) {
-      send_datagram(*tx_socket_, tx_endpoint_, std::move(packet));
-    }
+  for (auto& packet : packets) {
+    send_datagram<asio::generic::datagram_protocol>(*tx_socket_, tx_endpoint_, std::move(packet));
+  }
+}
+
+template <>
+void NetworkManager::write_pending_packets<true>() {
+  ASSERT(tx_socket_ != nullptr);
+
+  auto packets = gather_outbound();
+
+  for (auto& packet : packets) {
+    async_send_datagram<asio::generic::datagram_protocol>(*tx_socket_, tx_endpoint_,
+                                                          std::move(packet));
   }
 }
 
@@ -105,7 +112,7 @@ std::list<std::vector<uint8_t>> NetworkManager::gather_outbound() {
 
   if (parent().state_manager.any_of(Connection::State::Established,
                                     Connection::State::ShutdownPending,
-                                    Connection::State::ShutdownReceived)) {
+                                    Connection::State::ShutdownReceived)) [[likely]] {
     const auto a = result.size();
 
     result.splice(result.cend(), parent().out_data_queue.gather_fast_retransmission_packets());

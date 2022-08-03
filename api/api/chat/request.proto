@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api.chat;
+
+message Request {
+    enum Type {
+        ADD_MEMBER = 0;
+    }
+    Type type = 1;
+    bytes data = 2;
+}

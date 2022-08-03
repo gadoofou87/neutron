@@ -38,6 +38,8 @@ class Server {
 
   [[nodiscard]] bool is_open() const;
 
+  [[nodiscard]] asio::ip::udp::endpoint local_endpoint() const;
+
   std::shared_ptr<Connection> next_pending_connection();
 
   void open(Configuration&& config);

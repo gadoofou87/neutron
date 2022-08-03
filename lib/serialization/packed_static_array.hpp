@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string_view>
 #include <type_traits>
 
 namespace serialization {
@@ -23,6 +24,22 @@ struct PackedStaticArray {
   operator std::span<const data_type>() const noexcept { return std::span<const data_type>(data_); }
 
   operator std::span<data_type>() noexcept { return std::span<data_type>(data_); }
+
+  std::span<const data_type> span() const noexcept { return *this; }
+
+  std::span<data_type> span() noexcept { return *this; }
+
+  operator std::basic_string_view<const data_type>() const noexcept {
+    return std::basic_string_view<const data_type>(data_);
+  }
+
+  operator std::basic_string_view<data_type>() noexcept {
+    return std::basic_string_view<data_type>(data_);
+  }
+
+  std::basic_string_view<const data_type> view() const noexcept { return *this; }
+
+  std::basic_string_view<data_type> view() noexcept { return *this; }
 
  private:
   data_type data_[N];

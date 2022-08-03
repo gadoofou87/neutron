@@ -22,7 +22,7 @@ struct OutControlQueue : public utils::Parentable<ConnectionPrivate>, utils::IRe
   };
 
  public:
-  using storage_type = std::list<StorageValue>;
+  using storage_type = std::vector<StorageValue>;
 
  public:
   using Parentable::Parentable;

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package api.user.request;
+
+message AcceptConnection {
+    uint64 user_id = 1;
+}

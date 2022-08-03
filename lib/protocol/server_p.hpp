@@ -2,6 +2,7 @@
 
 #include <asio/generic/datagram_protocol.hpp>
 #include <asio/io_context_strand.hpp>
+#include <asio/ip/udp.hpp>
 #include <asio/steady_timer.hpp>
 #include <shared_mutex>
 #include <unordered_map>
@@ -26,7 +27,7 @@ struct ConnectionDetails : public std::recursive_mutex {
 
   std::shared_ptr<asio::generic::datagram_protocol::socket> rx_socket_server;
   std::shared_ptr<asio::generic::datagram_protocol::socket> tx_socket_server;
-  asio::generic::datagram_protocol::endpoint source_endpoint;
+  asio::ip::udp::endpoint source_endpoint;
 
   std::list<ConnectionID>::iterator pending_connections_iterator;
 
@@ -38,9 +39,14 @@ class ServerPrivate : public std::enable_shared_from_this<ServerPrivate> {
   explicit ServerPrivate(asio::io_context& io_context);
   ~ServerPrivate();
 
+  void create_new_connection(std::vector<uint8_t>&& data, asio::ip::udp::endpoint&& endpoint);
+
+  void redirect_encrypted_packet(std::vector<uint8_t>&& data, asio::ip::udp::endpoint&& endpoint);
+
+  void start_closing_timer(ConnectionDetails& connection_details, ConnectionID connection_id);
+
  public:
-  void async_receive_socket_handler(std::vector<uint8_t> data,
-                                    asio::generic::datagram_protocol::endpoint endpoint);
+  void async_receive_socket_handler(std::vector<uint8_t> data, asio::ip::udp::endpoint endpoint);
 
   void async_receive_tx_socket_server_handler(
       ConnectionID connection_id, std::vector<uint8_t> data,
@@ -52,18 +58,15 @@ class ServerPrivate : public std::enable_shared_from_this<ServerPrivate> {
                                               Connection::State new_state);
 
  public:
-  void start_closing_timer(ConnectionDetails& connection_details, ConnectionID connection_id);
-
- public:
   asio::io_context& io_context;
   std::shared_mutex mutex;
 
   size_t backlog;
   std::vector<uint8_t> secret_key;
-  std::shared_ptr<asio::generic::datagram_protocol::socket> socket;
+  std::shared_ptr<asio::ip::udp::socket> socket;
 
   struct : std::unordered_map<ConnectionID, ConnectionDetails>, std::shared_mutex {
-    ConnectionID next_connection_id;
+    ConnectionID next_id;
   } connections;
   struct : std::list<ConnectionID>, std::recursive_mutex {
   } pending_connections;

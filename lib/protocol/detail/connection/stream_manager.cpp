@@ -6,12 +6,22 @@ namespace protocol {
 
 namespace detail {
 
-Stream& StreamManager::get(StreamSequenceNumber::value_type sid) {
-  return streams_.try_emplace(sid, parent(), sid).first->second;
+std::optional<StreamSequenceNumber::value_type> StreamManager::find_readable() {
+  for (const auto& [id, stream] : streams_) {
+    if (stream.is_readable()) {
+      return id;
+    }
+  }
+
+  return std::nullopt;
 }
 
-StreamPrivate& StreamManager::get_private(StreamSequenceNumber::value_type sid) {
-  return *get(sid).impl_;
+Stream& StreamManager::get(StreamSequenceNumber::value_type identifier) {
+  return streams_.try_emplace(identifier, parent(), identifier).first->second;
+}
+
+StreamPrivate& StreamManager::get_private(StreamSequenceNumber::value_type identifier) {
+  return *get(identifier).impl_;
 }
 
 void StreamManager::reset() { streams_.clear(); }

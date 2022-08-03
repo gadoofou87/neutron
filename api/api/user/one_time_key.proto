@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package api.user;
+
+message OneTimeKey {
+    bytes public_key_a = 1;
+    bytes public_key_b = 2;
+    bytes signature = 3;
+}

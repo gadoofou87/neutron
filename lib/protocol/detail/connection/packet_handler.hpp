@@ -1,6 +1,5 @@
 #pragma once
 
-#include "api/types/transmission_sequence_number.hpp"
 #include "utils/abstract/iresetable.hpp"
 #include "utils/parentable.hpp"
 

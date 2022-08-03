@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package api.chat.response;
+
+message CreateGroup {
+    message Result {
+        uint64 id = 1;
+    }
+    message Error {
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

@@ -48,14 +48,14 @@ using namespace communication::detail;
 template <typename... Tags>
 class BufferBuilder<Response, Tags...> {
  public:
-  static constexpr size_t overhead_size = sizeof(Response::id_type);
+  static constexpr size_t static_size = sizeof(Response::id_type);
 
  public:
   BufferBuilder() : data_size_(0) {}
 
   auto build() { return std::vector<uint8_t>(buffer_size()); }
 
-  size_t buffer_size() { return overhead_size + data_size(); }
+  size_t buffer_size() { return static_size + data_size(); }
 
   size_t data_size() {
     static_assert((std::is_same_v<Tags, BufferBuilderTag<0>> || ...), "data size is not set");

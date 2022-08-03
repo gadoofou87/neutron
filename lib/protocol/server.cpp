@@ -133,6 +133,16 @@ bool Server::is_open() const {
   return true;
 }
 
+asio::ip::udp::endpoint Server::local_endpoint() const {
+  std::shared_lock lock(impl_->mutex);
+
+  if (!is_open()) {
+    throw std::runtime_error("is not open");
+  }
+
+  return impl_->socket->local_endpoint();
+}
+
 std::shared_ptr<Connection> Server::next_pending_connection() {
   std::shared_lock lock(impl_->mutex);
 
@@ -202,13 +212,13 @@ void Server::open(Configuration&& config) {
   crypto::Helpers::memzero(impl_->secret_key.data(), impl_->secret_key.size());
 
   impl_->secret_key = std::move(config.secret_key);
-  impl_->socket = std::make_shared<asio::generic::datagram_protocol::socket>(std::move(socket));
+  impl_->socket = std::make_shared<asio::ip::udp::socket>(std::move(socket));
 
-  impl_->connections.next_connection_id = std::numeric_limits<ConnectionID>::min();
+  impl_->connections.next_id = std::numeric_limits<ConnectionID>::min();
 
   async_recursive_read_datagram(
       impl_->io_context, impl_->socket, [weak_impl = impl_->weak_from_this()](auto&&... args) {
-        if (auto impl = weak_impl.lock()) {
+        if (auto impl = weak_impl.lock()) [[likely]] {
           impl->async_receive_socket_handler(std::forward<decltype(args)>(args)...);
         }
       });
@@ -223,8 +233,156 @@ ServerPrivate::ServerPrivate(asio::io_context& io_context)
 
 ServerPrivate::~ServerPrivate() = default;
 
-void ServerPrivate::async_receive_socket_handler(
-    std::vector<uint8_t> data, asio::generic::datagram_protocol::endpoint endpoint) {
+void ServerPrivate::create_new_connection(std::vector<uint8_t>&& data,
+                                          asio::ip::udp::endpoint&& endpoint) {
+  Packet packet(data);
+
+  ChunkList chunk_list(packet.data());
+
+  if (!chunk_list.validate()) [[unlikely]] {
+    return;
+  }
+  if (chunk_list.size() != 1) [[unlikely]] {
+    return;
+  }
+
+  Chunk chunk(chunk_list.chunk_data(0));
+
+  if (!chunk.validate()) [[unlikely]] {
+    return;
+  }
+  if (chunk.type() != ChunkType::Initiation) [[unlikely]] {
+    return;
+  }
+
+  if (backlog != 0) {
+    std::unique_lock lock(pending_connections);
+
+    if (pending_connections.size() == backlog) {
+      return;
+    }
+  }
+
+  auto [rx_socket, rx_socket_server] = create_socket_pair(io_context);
+
+  if (rx_socket == nullptr || rx_socket_server == nullptr) [[unlikely]] {
+    return;
+  }
+
+  auto [tx_socket, tx_socket_server] = create_socket_pair(io_context);
+
+  if (tx_socket == nullptr || tx_socket_server == nullptr) [[unlikely]] {
+    return;
+  }
+
+  ConnectionID connection_id;
+
+  {
+    std::unique_lock lock(connections);
+
+    while (true) {
+      auto [iterator, success] = connections.try_emplace(connections.next_id++, io_context);
+
+      if (success) [[likely]] {
+        connection_id = iterator->first;
+        break;
+      }
+    }
+  }
+  {
+    std::shared_lock lock(connections);
+
+    auto connections_iterator = connections.find(connection_id);
+
+    ASSERT(connections_iterator != connections.end());
+
+    auto& connection_details = connections_iterator->second;
+
+    {
+      std::unique_lock lock(connection_details);
+
+      connection_details.connection = std::make_shared<Connection>(io_context);
+      connection_details.state_changed_subscription =
+          connection_details.connection->state_changed()->subscribe(
+              [weak_self = weak_from_this(), connection_id](auto&&... args) {
+                if (auto self = weak_self.lock()) [[likely]] {
+                  self->state_changed_event_connection_handler(
+                      connection_id, std::forward<decltype(args)>(args)...);
+                }
+              });
+
+      async_recursive_read_datagram(connection_details.strand, tx_socket_server,
+                                    [weak_self = weak_from_this(), connection_id](auto&&... args) {
+                                      if (auto self = weak_self.lock()) [[likely]] {
+                                        self->async_receive_tx_socket_server_handler(
+                                            connection_id, std::forward<decltype(args)>(args)...);
+                                      }
+                                    });
+
+      connection_details.rx_socket_server = rx_socket_server;
+      connection_details.tx_socket_server = tx_socket_server;
+      connection_details.source_endpoint = std::move(endpoint);
+
+      connection_details.state = ConnectionDetails::State::Connecting;
+
+      Connection::ServerConfiguration config;
+
+      config.rx_socket = std::move(rx_socket);
+      config.tx_socket = std::move(tx_socket);
+      config.connection_id = connection_id;
+      config.secret_key = secret_key;
+
+      connection_details.connection->associate(std::move(config));
+    }
+  }
+
+  async_send_datagram(*rx_socket_server, std::nullopt, std::move(data));
+}
+
+void ServerPrivate::redirect_encrypted_packet(std::vector<uint8_t>&& data,
+                                              asio::ip::udp::endpoint&& endpoint) {
+  Packet packet(data);
+
+  std::shared_lock lock(connections);
+
+  auto connections_iterator = connections.find(packet.connection_id());
+
+  if (connections_iterator == connections.cend()) [[unlikely]] {
+    return;
+  }
+
+  auto& connection_details = connections_iterator->second;
+
+  {
+    std::unique_lock lock(connection_details);
+
+    if (connection_details.state == ConnectionDetails::State::Closing) [[unlikely]] {
+      return;
+    }
+
+    async_send_datagram(*connection_details.rx_socket_server, std::nullopt, std::move(data));
+
+    connection_details.source_endpoint = std::move(endpoint);
+  }
+}
+
+void ServerPrivate::start_closing_timer(ConnectionDetails& connection_details,
+                                        ConnectionID connection_id) {
+  connection_details.closing_timer.emplace(io_context, CLOSING_INTERVAL);
+  connection_details.closing_timer->async_wait(asio::bind_executor(
+      connection_details.strand,
+      [weak_self = weak_from_this(), connection_id](const asio::error_code& error) {
+        if (error) [[unlikely]] {
+          return;
+        }
+        if (auto self = weak_self.lock()) [[likely]] {
+          self->async_wait_closing_timer_handler(connection_id);
+        }
+      }));
+}
+
+void ServerPrivate::async_receive_socket_handler(std::vector<uint8_t> data,
+                                                 asio::ip::udp::endpoint endpoint) {
   std::shared_lock lock(mutex, std::try_to_lock);
 
   if (!lock.owns_lock()) {
@@ -233,135 +391,14 @@ void ServerPrivate::async_receive_socket_handler(
 
   Packet packet(data);
 
-  if (!packet.validate()) {
+  if (!packet.validate()) [[unlikely]] {
     return;
   }
 
-  if (packet.bits().e) {
-    std::shared_lock lock(connections);
-
-    auto connections_iterator = connections.find(packet.connection_id());
-
-    if (connections_iterator == connections.cend()) {
-      return;
-    }
-
-    auto& connection_details = connections_iterator->second;
-
-    {
-      std::unique_lock lock(connection_details);
-
-      if (connection_details.state == ConnectionDetails::State::Closing) {
-        return;
-      }
-
-      async_send_datagram(*connection_details.rx_socket_server, std::nullopt, std::move(data));
-
-      connection_details.source_endpoint = std::move(endpoint);
-    }
+  if (packet.bits().e) [[likely]] {
+    redirect_encrypted_packet(std::move(data), std::move(endpoint));
   } else {
-    ChunkList chunk_list(packet.data());
-
-    if (!chunk_list.validate()) {
-      return;
-    }
-    if (chunk_list.size() != 1) {
-      return;
-    }
-
-    Chunk chunk(chunk_list.chunk_data(0));
-
-    if (!chunk.validate()) {
-      return;
-    }
-    if (chunk.type() != ChunkType::Initiation) {
-      return;
-    }
-
-    if (backlog != 0) {
-      std::unique_lock lock(pending_connections);
-
-      if (pending_connections.size() == backlog) {
-        return;
-      }
-    }
-
-    auto [rx_socket, rx_socket_server] = create_socket_pair(io_context);
-
-    if (rx_socket == nullptr || rx_socket_server == nullptr) {
-      return;
-    }
-
-    auto [tx_socket, tx_socket_server] = create_socket_pair(io_context);
-
-    if (tx_socket == nullptr || tx_socket_server == nullptr) {
-      return;
-    }
-
-    ConnectionID connection_id;
-
-    {
-      std::unique_lock lock(connections);
-
-      while (true) {
-        auto [iterator, success] =
-            connections.try_emplace(connections.next_connection_id++, io_context);
-
-        if (success) {
-          connection_id = iterator->first;
-          break;
-        }
-      }
-    }
-    {
-      std::shared_lock lock(connections);
-
-      auto connections_iterator = connections.find(connection_id);
-
-      ASSERT(connections_iterator != connections.end());
-
-      auto& connection_details = connections_iterator->second;
-
-      {
-        std::unique_lock lock(connection_details);
-
-        connection_details.connection = std::make_shared<Connection>(io_context);
-        connection_details.state_changed_subscription =
-            connection_details.connection->state_changed()->subscribe(
-                [weak_self = weak_from_this(), connection_id](auto&&... args) {
-                  if (auto self = weak_self.lock()) {
-                    self->state_changed_event_connection_handler(
-                        connection_id, std::forward<decltype(args)>(args)...);
-                  }
-                });
-
-        async_recursive_read_datagram(
-            connection_details.strand, tx_socket_server,
-            [weak_self = weak_from_this(), connection_id](auto&&... args) {
-              if (auto self = weak_self.lock()) {
-                self->async_receive_tx_socket_server_handler(connection_id,
-                                                             std::forward<decltype(args)>(args)...);
-              }
-            });
-
-        connection_details.rx_socket_server = rx_socket_server;
-        connection_details.tx_socket_server = tx_socket_server;
-        connection_details.source_endpoint = std::move(endpoint);
-
-        connection_details.state = ConnectionDetails::State::Connecting;
-
-        Connection::ServerConfiguration config;
-
-        config.rx_socket = std::move(rx_socket);
-        config.tx_socket = std::move(tx_socket);
-        config.connection_id = connection_id;
-        config.secret_key = secret_key;
-
-        connection_details.connection->associate(std::move(config));
-      }
-    }
-
-    async_send_datagram(*rx_socket_server, std::nullopt, std::move(data));
+    create_new_connection(std::move(data), std::move(endpoint));
   }
 }
 
@@ -487,21 +524,6 @@ void ServerPrivate::state_changed_event_connection_handler(ConnectionID connecti
     default:
       break;
   }
-}
-
-void ServerPrivate::start_closing_timer(ConnectionDetails& connection_details,
-                                        ConnectionID connection_id) {
-  connection_details.closing_timer.emplace(io_context, CLOSING_INTERVAL);
-  connection_details.closing_timer->async_wait(asio::bind_executor(
-      connection_details.strand,
-      [weak_self = weak_from_this(), connection_id](const asio::error_code& error) {
-        if (error) {
-          return;
-        }
-        if (auto self = weak_self.lock()) {
-          self->async_wait_closing_timer_handler(connection_id);
-        }
-      }));
 }
 
 }  // namespace protocol

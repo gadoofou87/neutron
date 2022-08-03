@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.user.response;
+
+message SignIn {
+    message Result {
+        uint32 device_id = 1;
+    }
+    message Error {
+        enum Code {
+            ALREADY_SIGNED_IN = 0;
+            USER_NOT_FOUND = 1;
+            INVALID_PASSWORD = 2;
+            DEVICE_NOT_FOUND = 3;
+            INVALID_PUBLIC_KEY = 4;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

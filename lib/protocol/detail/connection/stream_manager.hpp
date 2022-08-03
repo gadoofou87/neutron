@@ -17,9 +17,11 @@ class StreamManager : public utils::Parentable<ConnectionPrivate>, utils::IReset
  public:
   using Parentable::Parentable;
 
-  Stream& get(StreamSequenceNumber::value_type sid);
+  std::optional<StreamSequenceNumber::value_type> find_readable();
 
-  StreamPrivate& get_private(StreamSequenceNumber::value_type sid);
+  Stream& get(StreamSequenceNumber::value_type identifier);
+
+  StreamPrivate& get_private(StreamSequenceNumber::value_type identifier);
 
   void reset() override;
 

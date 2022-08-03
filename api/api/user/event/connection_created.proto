@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package api.user.event;
+
+message ConnectionCreated {
+    uint64 initiator_user_id = 1;
+    uint64 responder_user_id = 2;
+}

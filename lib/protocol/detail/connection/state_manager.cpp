@@ -91,7 +91,7 @@ void StateManager::set(Connection::State state) {
       break;
   }
 
-  parent().events.state_changed->emit(state_);
+  parent().state_changed_event->emit(state_);
 }
 
 }  // namespace detail

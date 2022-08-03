@@ -7,7 +7,6 @@
 #include "detail/connection/ack_manager.hpp"
 #include "detail/connection/congestion_manager.hpp"
 #include "detail/connection/crypto_manager.hpp"
-#include "detail/connection/events.hpp"
 #include "detail/connection/in_data_queue.hpp"
 #include "detail/connection/internal_data.hpp"
 #include "detail/connection/network_manager.hpp"
@@ -39,7 +38,6 @@ class ConnectionPrivate : public std::enable_shared_from_this<ConnectionPrivate>
   asio::io_context::strand strand;
   std::recursive_mutex mutex;
 
-  Events events;
   InternalData internal_data;
 
   InDataQueue in_data_queue;
@@ -56,6 +54,9 @@ class ConnectionPrivate : public std::enable_shared_from_this<ConnectionPrivate>
   StateManager state_manager;
   StreamManager stream_manager;
   TimerManager timer_manager;
+
+  std::shared_ptr<Connection::ReadyReadEvent> ready_read_event;
+  std::shared_ptr<Connection::StateChangedEvent> state_changed_event;
 
  public:
   std::shared_ptr<ConnectionPrivate> self;

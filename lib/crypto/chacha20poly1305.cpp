@@ -96,19 +96,19 @@ void chacha20poly1305_finish(chacha20poly1305_ctx *ctx, uint8_t *mac, uint64_t a
 void ChaCha20Poly1305::encrypt(std::span<uint8_t> ciphertext, std::span<uint8_t> mac,
                                std::span<const uint8_t> iv, std::span<const uint8_t> key,
                                std::span<const uint8_t> ad, std::span<const uint8_t> message) {
-  if (message.size() != ciphertext.size()) {
+  if (message.size() != ciphertext.size()) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect message size (actual: {}, expected: {})",
                                          message.size(), ciphertext.size()));
   }
-  if (mac.size() != DigestSize) {
+  if (mac.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect mac size (actual: {}, expected: {})", mac.size(), DigestSize));
   }
-  if (iv.size() != IVSize) {
+  if (iv.size() != IVSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect iv size (actual: {}, expected: {})", iv.size(), IVSize));
   }
-  if (key.size() != KeyLength) {
+  if (key.size() != KeyLength) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect key size (actual: {}, expected: {})", key.size(), KeyLength));
   }
@@ -122,19 +122,19 @@ void ChaCha20Poly1305::encrypt(std::span<uint8_t> ciphertext, std::span<uint8_t>
 bool ChaCha20Poly1305::decrypt(std::span<uint8_t> message, std::span<const uint8_t> mac,
                                std::span<const uint8_t> iv, std::span<const uint8_t> key,
                                std::span<const uint8_t> ad, std::span<const uint8_t> ciphertext) {
-  if (message.size() != ciphertext.size()) {
+  if (message.size() != ciphertext.size()) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect message size (actual: {}, expected: {})",
                                          message.size(), ciphertext.size()));
   }
-  if (mac.size() != DigestSize) {
+  if (mac.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect mac size (actual: {}, expected: {})", mac.size(), DigestSize));
   }
-  if (iv.size() != IVSize) {
+  if (iv.size() != IVSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect iv size (actual: {}, expected: {})", iv.size(), IVSize));
   }
-  if (key.size() != KeyLength) {
+  if (key.size() != KeyLength) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect key size (actual: {}, expected: {})", key.size(), KeyLength));
   }
@@ -152,19 +152,19 @@ bool ChaCha20Poly1305::decrypt(std::span<uint8_t> message, std::span<const uint8
 void XChaCha20Poly1305::encrypt(std::span<uint8_t> ciphertext, std::span<uint8_t> mac,
                                 std::span<const uint8_t> iv, std::span<const uint8_t> key,
                                 std::span<const uint8_t> ad, std::span<const uint8_t> message) {
-  if (message.size() != ciphertext.size()) {
+  if (message.size() != ciphertext.size()) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect message size (actual: {}, expected: {})",
                                          message.size(), ciphertext.size()));
   }
-  if (mac.size() != DigestSize) {
+  if (mac.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect mac size (actual: {}, expected: {})", mac.size(), DigestSize));
   }
-  if (iv.size() != IVSize) {
+  if (iv.size() != IVSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect iv size (actual: {}, expected: {})", iv.size(), IVSize));
   }
-  if (key.size() != KeyLength) {
+  if (key.size() != KeyLength) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect key size (actual: {}, expected: {})", key.size(), KeyLength));
   }
@@ -178,19 +178,19 @@ void XChaCha20Poly1305::encrypt(std::span<uint8_t> ciphertext, std::span<uint8_t
 bool XChaCha20Poly1305::decrypt(std::span<uint8_t> message, std::span<const uint8_t> mac,
                                 std::span<const uint8_t> iv, std::span<const uint8_t> key,
                                 std::span<const uint8_t> ad, std::span<const uint8_t> ciphertext) {
-  if (message.size() != ciphertext.size()) {
+  if (message.size() != ciphertext.size()) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect message size (actual: {}, expected: {})",
                                          message.size(), ciphertext.size()));
   }
-  if (mac.size() != DigestSize) {
+  if (mac.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect mac size (actual: {}, expected: {})", mac.size(), DigestSize));
   }
-  if (iv.size() != IVSize) {
+  if (iv.size() != IVSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect iv size (actual: {}, expected: {})", iv.size(), IVSize));
   }
-  if (key.size() != KeyLength) {
+  if (key.size() != KeyLength) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect key size (actual: {}, expected: {})", key.size(), KeyLength));
   }

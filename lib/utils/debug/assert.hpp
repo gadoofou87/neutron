@@ -2,9 +2,11 @@
 
 #ifdef NDEBUG
 
-#define ASSERT(...) ;
+#define ASSERT(exp) (void)(exp);
 
-#define ASSERT_X(...) ;
+#define ASSERT_X(e0, e1) \
+  (void)(e0);            \
+  (void)(e1);
 
 #else
 

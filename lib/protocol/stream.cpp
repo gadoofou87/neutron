@@ -118,7 +118,7 @@ void StreamPrivate::handle_data(bool unordered, StreamSequenceNumber::value_type
   }
 
   if (readable) {
-    connection_private.events.ready_read->emit(stream_identifier);
+    connection_private.ready_read_event->emit(stream_identifier);
   }
 }
 

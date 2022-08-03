@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api.user.response;
+
+message UploadOneTimeKey {
+    message Result {
+    }
+    message Error {
+        enum Code {
+            INVALID_PUBLIC_KEY_A = 0;
+            INVALID_PUBLIC_KEY_B = 1;
+            INVALID_SIGNATURE = 2;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

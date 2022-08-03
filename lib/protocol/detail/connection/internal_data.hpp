@@ -6,7 +6,6 @@
 #include "connection.hpp"
 #include "crypto/sidhp434_compressed.hpp"
 #include "detail/connection/api/types/connection_id.hpp"
-#include "detail/connection/api/types/transmission_sequence_number.hpp"
 
 namespace protocol {
 

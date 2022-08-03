@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package api.user;
+
+message Connection {
+    uint64 initiator_user_id = 1;
+    uint64 responder_user_id = 2;
+    bool established = 3;
+}

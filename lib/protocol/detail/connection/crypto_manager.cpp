@@ -12,7 +12,7 @@ namespace {
 
 auto generate_iv(const serialization::PackedInteger<Nonce>& nonce,
                  const serialization::pu32& initial_count) {
-  thread_local std::array<uint8_t, crypto::ChaCha20Poly1305::IVSize> iv;
+  std::array<uint8_t, crypto::ChaCha20Poly1305::IVSize> iv;
 
   ASSERT(nonce.size() + initial_count.size() == iv.size());
 
@@ -27,14 +27,14 @@ auto generate_iv(const serialization::PackedInteger<Nonce>& nonce,
 bool CryptoManager::decrypt(std::span<const uint8_t> mac,
                             const serialization::PackedInteger<Nonce>& nonce,
                             std::span<uint8_t> data) {
-  if (!replay_.check(nonce)) {
+  if (!replay_.check(nonce)) [[unlikely]] {
     return false;
   }
 
   ASSERT(decrypt_initial_count_ != encrypt_initial_count_);
 
   if (!crypto::ChaCha20Poly1305::decrypt(data, mac, generate_iv(nonce, decrypt_initial_count_),
-                                         key_, {}, data)) {
+                                         key_, {}, data)) [[unlikely]] {
     return false;
   }
 

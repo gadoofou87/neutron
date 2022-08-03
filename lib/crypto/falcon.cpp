@@ -24,11 +24,11 @@ void init_shake256_context(shake256_context *rng) {
 }  // namespace
 
 void Falcon512::generate_keypair(std::span<uint8_t> public_key, std::span<uint8_t> secret_key) {
-  if (public_key.size() != PublicKeyLength) {
+  if (public_key.size() != PublicKeyLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect public key size (actual: {}, expected: {})",
                                          public_key.size(), PublicKeyLength));
   }
-  if (secret_key.size() != SecretKeyLength) {
+  if (secret_key.size() != SecretKeyLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect secret key size (actual: {}, expected: {})",
                                          secret_key.size(), SecretKeyLength));
   }
@@ -41,18 +41,18 @@ void Falcon512::generate_keypair(std::span<uint8_t> public_key, std::span<uint8_
   auto ret = falcon_keygen_make(&rng, logn512, secret_key.data(), secret_key.size(),
                                 public_key.data(), public_key.size(), tmp.data(), tmp.size());
 
-  if (ret != 0) {
+  if (ret != 0) [[unlikely]] {
     throw std::runtime_error(fmt::format("falcon_keygen_make() returned {}", ret));
   }
 }
 
 void Falcon512::sign(std::span<uint8_t> signature, std::span<const uint8_t> message,
                      std::span<const uint8_t> secret_key) {
-  if (signature.size() != SignatureLength) {
+  if (signature.size() != SignatureLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect signature size (actual: {}, expected: {})",
                                          signature.size(), SignatureLength));
   }
-  if (secret_key.size() != SecretKeyLength) {
+  if (secret_key.size() != SecretKeyLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect secret key size (actual: {}, expected: {})",
                                          secret_key.size(), SecretKeyLength));
   }
@@ -70,18 +70,18 @@ void Falcon512::sign(std::span<uint8_t> signature, std::span<const uint8_t> mess
 
   ASSERT(sig_len == signature.size());
 
-  if (ret != 0) {
+  if (ret != 0) [[unlikely]] {
     throw std::runtime_error(fmt::format("falcon_sign_dyn() returned {}", ret));
   }
 }
 
 bool Falcon512::verify(std::span<const uint8_t> signature, std::span<const uint8_t> message,
                        std::span<const uint8_t> public_key) {
-  if (signature.size() != SignatureLength) {
+  if (signature.size() != SignatureLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect signature size (actual: {}, expected: {})",
                                          signature.size(), SignatureLength));
   }
-  if (public_key.size() != PublicKeyLength) {
+  if (public_key.size() != PublicKeyLength) [[unlikely]] {
     throw std::runtime_error(fmt::format("Incorrect public key size (actual: {}, expected: {})",
                                          public_key.size(), PublicKeyLength));
   }
@@ -93,7 +93,7 @@ bool Falcon512::verify(std::span<const uint8_t> signature, std::span<const uint8
                     public_key.size(), message.data(), message.size(), tmp.data(), tmp.size());
 
   if (ret != 0) {
-    if (ret == FALCON_ERR_FORMAT || ret == FALCON_ERR_BADSIG) {
+    if (ret == FALCON_ERR_FORMAT || ret == FALCON_ERR_BADSIG) [[likely]] {
       return false;
     }
 

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "api/user/one_time_key.proto";
+
+package api.user.request;
+
+message UploadOneTimeKey {
+    OneTimeKey one_time_key = 1;
+}

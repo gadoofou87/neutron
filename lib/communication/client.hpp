@@ -2,10 +2,8 @@
 
 #include <functional>
 #include <optional>
-#include <span>
 
 #include "detail/base.hpp"
-#include "utils/event.hpp"
 
 namespace communication {
 
@@ -18,6 +16,8 @@ class ClientPrivate;
 class Client : public detail::Base {
  public:
   using NewEventEvent = utils::Event<>;
+
+ public:
   using ExceptionCallback = std::function<void(size_t /* code */)>;
   using ResponseCallback = std::function<void(std::vector<uint8_t> /* data */)>;
 
@@ -29,7 +29,8 @@ class Client : public detail::Base {
 
   std::optional<std::vector<uint8_t>> next_pending_event();
 
-  void send_request(std::span<const uint8_t> data, const ResponseCallback& on_response,
+  void send_request(size_t stream_identifier, std::span<const uint8_t> data,
+                    const ResponseCallback& on_response,
                     const ExceptionCallback& on_exception = nullptr);
 
  public:

@@ -31,11 +31,11 @@ void PacketHandler::reset() {}
 
 template <>
 void PacketHandler::handle(Abort abort) {
-  if (parent().state_manager.any_of(Connection::State::Listen)) {
+  if (parent().state_manager.any_of(Connection::State::Listen)) [[unlikely]] {
     return;
   }
 
-  if (!abort.validate()) {
+  if (!abort.validate()) [[unlikely]] {
     return;
   }
 
@@ -44,19 +44,20 @@ void PacketHandler::handle(Abort abort) {
 
 template <>
 void PacketHandler::handle(Initiation initiation) {
-  if (parent().internal_data.type == Connection::Type::Client) {
+  if (parent().internal_data.type == Connection::Type::Client) [[unlikely]] {
     return;
   }
-  if (parent().state_manager.none_of(Connection::State::Listen, Connection::State::InitReceived)) {
+  if (parent().state_manager.none_of(Connection::State::Listen, Connection::State::InitReceived))
+      [[unlikely]] {
     return;
   }
 
-  if (!initiation.validate()) {
+  if (!initiation.validate()) [[unlikely]] {
     return;
   }
   if (initiation.public_key_a().size() != crypto::SIDHp434_compressed::PublicKeyLength ||
       initiation.public_key_b().size() != crypto::SIDHp434_compressed::PublicKeyLength ||
-      initiation.public_key_b_mac().size() != crypto::SHA3_256::DigestSize) {
+      initiation.public_key_b_mac().size() != crypto::SHA3_256::DigestSize) [[unlikely]] {
     //
     return;
   }
@@ -78,7 +79,7 @@ void PacketHandler::handle(Initiation initiation) {
         public_key_b_mac, parent().internal_data.temp_agreed, initiation.public_key_b());
 
     if (!crypto::Helpers::memcmp(public_key_b_mac.data(), initiation.public_key_b_mac().data(),
-                                 public_key_b_mac.size())) {
+                                 public_key_b_mac.size())) [[unlikely]] {
       //
       return;
     }
@@ -128,18 +129,18 @@ void PacketHandler::handle(Initiation initiation) {
 
 template <>
 void PacketHandler::handle(InitiationAcknowledgement initiation_ack) {
-  if (parent().internal_data.type == Connection::Type::Server) {
+  if (parent().internal_data.type == Connection::Type::Server) [[unlikely]] {
     return;
   }
-  if (parent().state_manager.none_of(Connection::State::InitSent)) {
+  if (parent().state_manager.none_of(Connection::State::InitSent)) [[unlikely]] {
     return;
   }
 
-  if (!initiation_ack.validate()) {
+  if (!initiation_ack.validate()) [[unlikely]] {
     return;
   }
   if (initiation_ack.public_key_a().size() != crypto::SIDHp434_compressed::PublicKeyLength ||
-      initiation_ack.public_key_a_mac().size() != crypto::SHA3_256::DigestSize) {
+      initiation_ack.public_key_a_mac().size() != crypto::SHA3_256::DigestSize) [[unlikely]] {
     return;
   }
 
@@ -154,7 +155,7 @@ void PacketHandler::handle(InitiationAcknowledgement initiation_ack) {
                            parent().internal_data.temp_agreed.size());
 
   if (!crypto::Helpers::memcmp(public_key_a_mac.data(), initiation_ack.public_key_a_mac().data(),
-                               public_key_a_mac.size())) {
+                               public_key_a_mac.size())) [[unlikely]] {
     //
     return;
   }
@@ -180,14 +181,14 @@ void PacketHandler::handle(InitiationAcknowledgement initiation_ack) {
 
 template <>
 void PacketHandler::handle(InitiationComplete initiation_complete) {
-  if (parent().internal_data.type == Connection::Type::Client) {
+  if (parent().internal_data.type == Connection::Type::Client) [[unlikely]] {
     return;
   }
-  if (parent().state_manager.none_of(Connection::State::InitReceived)) {
+  if (parent().state_manager.none_of(Connection::State::InitReceived)) [[unlikely]] {
     return;
   }
 
-  if (!initiation_complete.validate()) {
+  if (!initiation_complete.validate()) [[unlikely]] {
     return;
   }
 
@@ -198,11 +199,11 @@ template <>
 void PacketHandler::handle(PayloadData payload_data) {
   if (parent().state_manager.none_of(
           Connection::State::InitReceived, Connection::State::Established,
-          Connection::State::ShutdownPending, Connection::State::ShutdownSent)) {
+          Connection::State::ShutdownPending, Connection::State::ShutdownSent)) [[unlikely]] {
     return;
   }
 
-  if (!payload_data.validate()) {
+  if (!payload_data.validate()) [[unlikely]] {
     return;
   }
 
@@ -228,11 +229,11 @@ template <>
 void PacketHandler::handle(SelectiveAcknowledgement sack) {
   if (parent().state_manager.none_of(Connection::State::Established,
                                      Connection::State::ShutdownPending,
-                                     Connection::State::ShutdownReceived)) {
+                                     Connection::State::ShutdownReceived)) [[unlikely]] {
     return;
   }
 
-  if (!sack.validate()) {
+  if (!sack.validate()) [[unlikely]] {
     return;
   }
 
@@ -294,7 +295,7 @@ void PacketHandler::handle(SelectiveAcknowledgement sack) {
 
 template <>
 void PacketHandler::handle(HeartbeatRequest heartbeat_request) {
-  if (!heartbeat_request.validate()) {
+  if (!heartbeat_request.validate()) [[unlikely]] {
     return;
   }
 
@@ -309,7 +310,7 @@ void PacketHandler::handle(HeartbeatRequest heartbeat_request) {
 
 template <>
 void PacketHandler::handle(HeartbeatAcknowledgement heartbeat_ack) {
-  if (!heartbeat_ack.validate()) {
+  if (!heartbeat_ack.validate()) [[unlikely]] {
     return;
   }
 
@@ -320,7 +321,7 @@ void PacketHandler::handle(HeartbeatAcknowledgement heartbeat_ack) {
                        .count() -
                    heartbeat_ack.hb_info().time_value;
 
-  if (rtt < 0) {
+  if (rtt < 0) [[unlikely]] {
     return;
   }
 
@@ -329,11 +330,11 @@ void PacketHandler::handle(HeartbeatAcknowledgement heartbeat_ack) {
 
 template <>
 void PacketHandler::handle(ShutdownAssociation shutdown_association) {
-  if (parent().state_manager.none_of(Connection::State::Established)) {
+  if (parent().state_manager.none_of(Connection::State::Established)) [[unlikely]] {
     return;
   }
 
-  if (!shutdown_association.validate()) {
+  if (!shutdown_association.validate()) [[unlikely]] {
     return;
   }
 
@@ -348,11 +349,11 @@ void PacketHandler::handle(ShutdownAssociation shutdown_association) {
 
 template <>
 void PacketHandler::handle(ShutdownAcknowledgement shutdown_acknowledgement) {
-  if (parent().state_manager.none_of(Connection::State::ShutdownSent)) {
+  if (parent().state_manager.none_of(Connection::State::ShutdownSent)) [[unlikely]] {
     return;
   }
 
-  if (!shutdown_acknowledgement.validate()) {
+  if (!shutdown_acknowledgement.validate()) [[unlikely]] {
     return;
   }
 
@@ -363,11 +364,11 @@ void PacketHandler::handle(ShutdownAcknowledgement shutdown_acknowledgement) {
 
 template <>
 void PacketHandler::handle(ShutdownComplete shutdown_complete) {
-  if (parent().state_manager.none_of(Connection::State::ShutdownAckSent)) {
+  if (parent().state_manager.none_of(Connection::State::ShutdownAckSent)) [[unlikely]] {
     return;
   }
 
-  if (!shutdown_complete.validate()) {
+  if (!shutdown_complete.validate()) [[unlikely]] {
     return;
   }
 
@@ -376,7 +377,7 @@ void PacketHandler::handle(ShutdownComplete shutdown_complete) {
 
 template <>
 void PacketHandler::handle(ForwardCumulativeTSN forward_cumulative_tsn) {
-  if (!forward_cumulative_tsn.validate()) {
+  if (!forward_cumulative_tsn.validate()) [[unlikely]] {
     return;
   }
 
@@ -385,7 +386,7 @@ void PacketHandler::handle(ForwardCumulativeTSN forward_cumulative_tsn) {
 
 template <>
 void PacketHandler::handle(Chunk chunk) {
-  if (!chunk.validate()) {
+  if (!chunk.validate()) [[unlikely]] {
     return;
   }
 
@@ -431,7 +432,7 @@ void PacketHandler::handle(Chunk chunk) {
 
 template <>
 void PacketHandler::handle(ChunkList chunk_list) {
-  if (!chunk_list.validate()) {
+  if (!chunk_list.validate()) [[unlikely]] {
     return;
   }
 
@@ -445,10 +446,11 @@ void PacketHandler::handle(ChunkList chunk_list) {
 }
 
 bool PacketHandler::handle(Packet packet) {
-  if (!packet.validate()) {
+  if (!packet.validate()) [[unlikely]] {
     return false;
   }
-  if (parent().state_manager.none_of(Connection::State::Listen, Connection::State::InitSent)) {
+  if (parent().state_manager.none_of(Connection::State::Listen, Connection::State::InitSent))
+      [[unlikely]] {
     if (packet.connection_id() != parent().internal_data.connection_id) {
       return false;
     }
@@ -456,15 +458,15 @@ bool PacketHandler::handle(Packet packet) {
 
   std::span<uint8_t> data;
 
-  if (packet.bits().e) {
+  if (packet.bits().e) [[likely]] {
     EncryptedPacketData encrypted_packet_data(packet.data());
 
-    if (!encrypted_packet_data.validate()) {
+    if (!encrypted_packet_data.validate()) [[unlikely]] {
       return false;
     }
 
     if (!parent().crypto_manager.decrypt(encrypted_packet_data.mac(), encrypted_packet_data.nonce(),
-                                         encrypted_packet_data.data())) {
+                                         encrypted_packet_data.data())) [[unlikely]] {
       return false;
     }
 

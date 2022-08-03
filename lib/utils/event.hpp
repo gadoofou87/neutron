@@ -15,6 +15,8 @@ class Event : public std::enable_shared_from_this<Event<Args...>> {
  public:
   class Subscription;
 
+  using Handler = std::function<void(Args...)>;
+
  public:
   [[nodiscard]] static auto create() { return std::shared_ptr<Event>(new Event()); }
 
@@ -22,19 +24,19 @@ class Event : public std::enable_shared_from_this<Event<Args...>> {
   void emit(const Args&... args) {
     std::unique_lock lock(mutex_);
     for (auto subscriptions = subscriptions_; auto& weak_subscription : subscriptions) {
-      if (auto subscription = weak_subscription.lock()) {
+      if (auto subscription = weak_subscription.lock()) [[likely]] {
         subscription->execute(args...);
       }
     }
   }
 
-  [[nodiscard]] auto subscribe(std::function<void(Args...)> method) {
+  [[nodiscard]] auto subscribe(Handler method) {
     std::unique_lock lock(mutex_);
     auto iterator = subscriptions_.emplace(subscriptions_.cend());
     std::shared_ptr<Subscription> subscription(
         new Subscription(std::move(method)),
         [weak_this = this->weak_from_this(), iterator](auto* p) {
-          if (auto shared_this = weak_this.lock()) {
+          if (auto shared_this = weak_this.lock()) [[likely]] {
             std::unique_lock lock(shared_this->mutex_);
             shared_this->subscriptions_.erase(iterator);
           }

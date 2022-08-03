@@ -1,9 +1,6 @@
-#include <cxxopts.hpp>
+#include "server.hpp"
 
 int main(int argc, char *argv[]) {
-  cxxopts::Options options("server");
-
-  auto result = options.parse(argc, argv);
-
+  Server::start(argc, argv);
   return 0;
 }

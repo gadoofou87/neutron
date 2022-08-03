@@ -66,6 +66,8 @@ class Connection {
 
   // option
 
+  [[nodiscard]] std::optional<size_t> readable_stream() const;
+
   void shutdown();
 
   [[nodiscard]] State state() const;

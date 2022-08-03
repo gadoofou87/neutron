@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+import "api/user/connection.proto";
+
+package api.user.response;
+
+message GetConnections {
+    message Result {
+        repeated api.user.Connection connections = 1;
+    }
+    message Error {
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

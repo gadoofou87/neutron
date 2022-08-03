@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.chat.response;
+
+message AddMember {
+    message Result {
+    }
+    message Error {
+        enum Code {
+            CHAT_NOT_FOUND = 0;
+            USER_NOT_FOUND = 1;
+            YOU_ARE_NOT_MEMBER = 2;
+            INSUFFICIENT_RIGHTS = 3;
+            USER_IS_ALREADY_MEMBER = 4;
+            CONNECTION_NOT_FOUND = 5;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

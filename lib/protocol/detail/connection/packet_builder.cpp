@@ -33,11 +33,33 @@ bool is_encryptable(ChunkType type) {
 PacketBuilder::PacketBuilder(parent_type& parent)
     : utils::Parentable<parent_type>(parent), mtu_(MTU_DEFAULT) {}
 
-std::list<std::vector<uint8_t>> PacketBuilder::build(BuildInput&& input) {
+template <bool Encrypted>
+PacketBuilder::BuildOutput PacketBuilder::build(std::list<std::vector<uint8_t>>&& chunks) {
+  BuildOutput result;
+
+  const size_t max_chunk_list_size =
+      Encrypted ? max_encrypted_packet_data_data_size() : max_packet_data_size();
+
+  while (!chunks.empty()) {
+    auto chunk_list_buffer = build_chunk_list(chunks, max_chunk_list_size);
+
+    if constexpr (Encrypted) {
+      auto encrypted_packet_data_buffer = build_encrypted_packet_data(std::move(chunk_list_buffer));
+
+      result.push_back(build_packet(std::move(encrypted_packet_data_buffer), true));
+    } else {
+      result.push_back(build_packet(std::move(chunk_list_buffer), false));
+    }
+  }
+
+  return result;
+}
+
+PacketBuilder::BuildOutput PacketBuilder::build(BuildInput&& input) {
   std::list<std::vector<uint8_t>> e;
   std::list<std::vector<uint8_t>> u;
 
-  for (auto iterator = input.begin(); iterator != input.end(); iterator = input.erase(iterator)) {
+  for (auto iterator = input.begin(); iterator != input.end(); ++iterator) {
     auto buffer =
         serialization::BufferBuilder<Chunk>{}.set_data_size(iterator->second.get().size()).build();
 
@@ -58,35 +80,13 @@ std::list<std::vector<uint8_t>> PacketBuilder::build(BuildInput&& input) {
     }
   }
 
-  std::list<std::vector<uint8_t>> result;
+  BuildOutput result;
 
   if (!u.empty()) {
-    result.splice(result.cend(), build(std::move(u), false));
+    result.splice(result.cend(), build<false>(std::move(u)));
   }
   if (!e.empty()) {
-    result.splice(result.cend(), build(std::move(e), true));
-  }
-
-  return result;
-}
-
-std::list<std::vector<uint8_t>> PacketBuilder::build(std::list<std::vector<uint8_t>>&& chunks,
-                                                     bool encrypted) {
-  std::list<std::vector<uint8_t>> result;
-
-  const size_t max_chunk_list_size =
-      encrypted ? max_encrypted_packet_data_data_size() : max_packet_data_size();
-
-  while (!chunks.empty()) {
-    auto chunk_list_buffer = build_chunk_list(chunks, max_chunk_list_size);
-
-    if (encrypted) {
-      auto encrypted_packet_data_buffer = build_encrypted_packet_data(std::move(chunk_list_buffer));
-
-      result.emplace_back(build_packet(std::move(encrypted_packet_data_buffer), true));
-    } else {
-      result.emplace_back(build_packet(std::move(chunk_list_buffer), false));
-    }
+    result.splice(result.cend(), build<true>(std::move(e)));
   }
 
   return result;
@@ -114,7 +114,7 @@ std::vector<uint8_t> PacketBuilder::build_chunk_list(std::list<std::vector<uint8
 
   size_t size = 0;
 
-  for (auto& chunk : chunks) {
+  for (const auto& chunk : chunks) {
     auto new_buffer_builder = buffer_builder.add_chunk_data_size(chunk.size());
 
     const size_t cached_new_size = new_buffer_builder.buffer_size();

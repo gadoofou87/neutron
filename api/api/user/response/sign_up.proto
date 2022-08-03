@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package api.user.response;
+
+message SignUp {
+    message Result {
+    }
+    message Error {
+        enum Code {
+            USERNAME_TAKEN = 0;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package api.user.request;
+
+message GetConnections {
+    message Filter {
+        optional bool established = 1;
+    }
+    Filter filter = 1;
+}

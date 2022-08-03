@@ -2,8 +2,6 @@
 
 #include <fmt/core.h>
 
-#include "helpers.hpp"
-
 extern "C" {
 #include <fips202.h>
 }
@@ -19,7 +17,7 @@ void SHAKE256::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
 }
 
 void SHA3_256::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
-  if (output.size() != DigestSize) {
+  if (output.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect output size (actual: {}, expected: {})", output.size(), DigestSize));
   }
@@ -28,7 +26,7 @@ void SHA3_256::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
 }
 
 void SHA3_384::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
-  if (output.size() != DigestSize) {
+  if (output.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect output size (actual: {}, expected: {})", output.size(), DigestSize));
   }
@@ -37,7 +35,7 @@ void SHA3_384::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
 }
 
 void SHA3_512::hash(std::span<uint8_t> output, std::span<const uint8_t> input) {
-  if (output.size() != DigestSize) {
+  if (output.size() != DigestSize) [[unlikely]] {
     throw std::runtime_error(
         fmt::format("Incorrect output size (actual: {}, expected: {})", output.size(), DigestSize));
   }

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package api.chat;
+
+message Event {
+    enum Type {
+        KEY_ROTATE = 0;
+        MEMBER_ADDED = 1;
+        MEMBER_DELETED = 2;
+        MESSAGE_EDITED = 3;
+        NEW_MESSAGE = 4;
+    }
+    uint64 id = 1;
+    uint64 creation_timestamp = 2;
+    uint64 chat_id = 3;
+    optional uint64 owner_user_id = 4;
+    Type type = 5;
+    bytes data = 6;
+}

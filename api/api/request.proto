@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package api;
+
+message Request {
+    enum Type {
+        CHAT = 0;
+        USER = 1;
+    }
+    Type type = 1;
+    bytes data = 2;
+}

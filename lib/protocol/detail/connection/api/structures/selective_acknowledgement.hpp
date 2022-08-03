@@ -57,20 +57,20 @@ using namespace protocol::detail;
 template <typename... Tags>
 class BufferBuilder<SelectiveAcknowledgement, Tags...> {
  public:
-  static constexpr size_t overhead_size = sizeof(SelectiveAcknowledgement::cum_tsn_ack_type);
+  static constexpr size_t static_size = sizeof(SelectiveAcknowledgement::cum_tsn_ack_type);
 
  public:
-  BufferBuilder() : data_size_(0) {}
+  BufferBuilder() : dynamic_size_(0) {}
 
   auto build() { return std::vector<uint8_t>(buffer_size()); }
 
-  size_t buffer_size() { return overhead_size + data_size(); }
+  size_t buffer_size() { return static_size + dynamic_size(); }
 
-  size_t data_size() {
+  size_t dynamic_size() {
     static_assert((std::is_same_v<Tags, BufferBuilderTag<0>> || ...),
                   "num gap ack blocks is not set");
 
-    return data_size_;
+    return dynamic_size_;
   }
 
   [[nodiscard]] auto set_num_gap_ack_blocks(size_t num) {
@@ -78,14 +78,14 @@ class BufferBuilder<SelectiveAcknowledgement, Tags...> {
                   "num gap ack blocks is already set");
 
     return BufferBuilder<SelectiveAcknowledgement, BufferBuilderTag<0>, Tags...>{
-        data_size_ + sizeof(SelectiveAcknowledgement::gap_ack_blks_type::value_type) * num};
+        dynamic_size_ + sizeof(SelectiveAcknowledgement::gap_ack_blks_type::value_type) * num};
   }
 
  private:
-  BufferBuilder(size_t data_size) : data_size_(data_size) {}
+  BufferBuilder(size_t dynamic_size) : dynamic_size_(dynamic_size) {}
 
  private:
-  size_t data_size_;
+  size_t dynamic_size_;
 
  private:
   template <typename, typename...>

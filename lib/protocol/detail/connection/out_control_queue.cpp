@@ -26,6 +26,8 @@ bool OutControlQueue::empty() const { return storage_.empty(); }
 std::list<std::vector<uint8_t>> OutControlQueue::gather_unsent_packets() {
   PacketBuilder::BuildInput input;
 
+  input.reserve(storage_.size());
+
   for (const auto& sv : storage_) {
     input.emplace_back(sv.type, sv.data);
   }

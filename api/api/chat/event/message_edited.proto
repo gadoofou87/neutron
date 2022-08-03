@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "api/chat/message.proto";
+
+package api.chat.event;
+
+message MessageEdited {
+    uint64 event_id = 1;
+    api.chat.Message message = 2;
+}

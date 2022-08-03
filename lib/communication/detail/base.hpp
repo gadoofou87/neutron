@@ -2,6 +2,10 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
+#include <span>
+
+#include "utils/event.hpp"
 
 namespace protocol {
 
@@ -17,22 +21,26 @@ class BasePrivate;
 
 class Base {
  public:
+  using NewRawDataEvent = utils::Event<>;
+
+ public:
   explicit Base(std::shared_ptr<BasePrivate> impl);
   virtual ~Base();
 
   void close();
 
-  [[nodiscard]] size_t current_read_stream() const;
-
-  [[nodiscard]] size_t current_write_stream() const;
-
   [[nodiscard]] bool is_open() const;
+
+  [[nodiscard]] bool has_pending_raw_data() const;
+
+  std::optional<std::vector<uint8_t>> next_pending_raw_data();
 
   void open(std::shared_ptr<protocol::Connection> connection);
 
-  void set_current_read_stream(size_t stream_identifier);
+  void send_raw_data(size_t stream_identifier, std::span<const uint8_t> data);
 
-  void set_current_write_stream(size_t stream_identifier);
+ public:
+  [[nodiscard]] std::shared_ptr<NewRawDataEvent> new_raw_data() const;
 
  protected:
   const std::shared_ptr<BasePrivate> impl_;

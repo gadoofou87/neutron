@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package api.user;
+
+message Event {
+    enum Type {
+        CONNECTION_ACCEPTED = 0;
+        CONNECTION_CREATED = 1;
+        CONNECTION_DELETED = 2;
+    }
+    Type type = 1;
+    bytes data = 2;
+}

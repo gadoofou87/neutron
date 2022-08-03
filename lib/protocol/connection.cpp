@@ -35,7 +35,7 @@ void Connection::abort() {
   if (impl_->state_manager.none_of(Connection::State::Listen)) {
     impl_->out_control_queue.push(ChunkType::Abort, {});
 
-    impl_->network_manager.write_pending_packets(false);
+    impl_->network_manager.write_pending_packets<false>();
   }
 
   impl_->state_manager.set(State::Closed);
@@ -167,6 +167,12 @@ size_t Connection::max_num_streams() const { return std::numeric_limits<StreamId
 
 //
 
+std::optional<size_t> Connection::readable_stream() const {
+  std::unique_lock lock(impl_->mutex);
+
+  return impl_->stream_manager.find_readable();
+}
+
 void Connection::shutdown() {
   std::unique_lock lock(impl_->mutex);
 
@@ -223,11 +229,11 @@ Stream& Connection::operator[](std::size_t stream_identifier) {
 }
 
 std::shared_ptr<Connection::ReadyReadEvent> Connection::ready_read() const {
-  return impl_->events.ready_read;
+  return impl_->ready_read_event;
 }
 
 std::shared_ptr<Connection::StateChangedEvent> Connection::state_changed() const {
-  return impl_->events.state_changed;
+  return impl_->state_changed_event;
 }
 
 ConnectionPrivate::ConnectionPrivate(asio::io_context& io_context)

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+import "api/chat/type.proto";
+
+package api.chat.request;
+
+message GetChats {
+    message Filter {
+        optional api.chat.Type type = 1;
+    }
+    Filter filter = 1;
+}

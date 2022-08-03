@@ -1,10 +1,8 @@
 #pragma once
 
-#include <climits>
-#include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <span>
+#include <type_traits>
 
 namespace serialization {
 
@@ -27,13 +25,15 @@ struct PackedInteger {
 
   auto &operator=(underlying_type value) noexcept { return set(value), *this; }
 
+  underlying_type value() const noexcept { return *this; }
+
  private:
   template <size_t I = 0>
   constexpr underlying_type get() const noexcept {
     if constexpr (I == sizeof(underlying_type)) {
       return 0;
     } else {
-      return (static_cast<underlying_type>(data_[I]) << CHAR_BIT * I) | get<I + 1>();
+      return (static_cast<underlying_type>(data_[I]) << 8 * I) | get<I + 1>();
     }
   }
 
@@ -42,7 +42,7 @@ struct PackedInteger {
     if constexpr (I == sizeof(underlying_type)) {
       return;
     } else {
-      data_[I] = (value >> CHAR_BIT * I) & 0xFF;
+      data_[I] = (value >> 8 * I) & 0xFF;
       set<I + 1>(value);
     }
   }

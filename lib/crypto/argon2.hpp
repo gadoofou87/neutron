@@ -14,10 +14,9 @@ struct Argon2 {
     uint32_t parallelism;
     size_t saltlen;
     size_t hashlen;
-    Type type;
   };
 
-  static std::string hash(std::string_view password, const Configuration& config);
+  static std::string hash(std::string_view password, Type type, const Configuration& config);
 
   [[nodiscard]] static bool verify(std::string_view encoded, std::string_view password, Type type);
 };

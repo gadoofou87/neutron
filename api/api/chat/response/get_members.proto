@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package api.chat.response;
+
+message GetMembers {
+    message Result {
+        message Value {
+            uint64 user_id = 1;
+            bool owner = 2;
+        }
+        repeated Value values = 1;
+    }
+    message Error {
+        enum Code {
+            CHAT_NOT_FOUND = 0;
+            YOU_ARE_NOT_MEMBER = 1;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

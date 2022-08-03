@@ -62,32 +62,30 @@ using namespace protocol::detail;
 template <typename... Tags>
 class BufferBuilder<ChunkList, Tags...> {
  public:
-  BufferBuilder() : data_size_(0), overhead_size_(sizeof(ChunkList::size_type)) {}
+  static constexpr size_t static_size = sizeof(ChunkList::size_type);
+
+ public:
+  BufferBuilder() : dynamic_size_(0) {}
 
   auto build() { return std::vector<uint8_t>(buffer_size()); }
 
-  size_t buffer_size() { return overhead_size() + data_size(); }
+  size_t buffer_size() { return static_size + dynamic_size(); }
 
-  size_t data_size() { return data_size_; }
-
-  size_t overhead_size() { return overhead_size_; }
+  size_t dynamic_size() { return dynamic_size_; }
 
   [[nodiscard]] auto add_chunk_data_size(size_t size) {
     ASSERT_X(size <= std::numeric_limits<ChunkList::chunk_data_type::size_type>::max(),
              "chunk data size is too big");
 
-    return BufferBuilder<ChunkList>{
-        data_size_ + sizeof(ChunkList::chunk_data_type::data_type) * size,
-        overhead_size_ + sizeof(ChunkList::chunk_data_type::size_type)};
+    return BufferBuilder<ChunkList>{dynamic_size_ + sizeof(ChunkList::chunk_data_type::size_type) +
+                                    sizeof(ChunkList::chunk_data_type::data_type) * size};
   }
 
  private:
-  BufferBuilder(size_t data_size, size_t overhead_size)
-      : data_size_(data_size), overhead_size_(overhead_size) {}
+  BufferBuilder(size_t dynamic_size) : dynamic_size_(dynamic_size) {}
 
  private:
-  size_t data_size_;
-  size_t overhead_size_;
+  size_t dynamic_size_;
 
  private:
   template <typename, typename...>

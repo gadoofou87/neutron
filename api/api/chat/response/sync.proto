@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "api/chat/event.proto";
+
+package api.chat.response;
+
+message Sync {
+    message Result {
+        message Value {
+            api.chat.Event event = 1;
+        }
+        repeated Value values = 1;
+    }
+    message Error {
+        enum Code {
+            CHAT_NOT_FOUND = 0;
+            YOU_ARE_NOT_MEMBER = 1;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

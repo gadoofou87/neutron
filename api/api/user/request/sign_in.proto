@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api.user.request;
+
+message SignIn {
+    bool has_device_id = 1;
+    string username = 2;
+    string password = 3;
+    uint32 device_id = 4;
+    bytes device_public_key = 5;
+}

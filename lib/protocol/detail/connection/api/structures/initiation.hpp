@@ -83,18 +83,18 @@ using namespace protocol::detail;
 template <typename... Tags>
 class BufferBuilder<Initiation, Tags...> {
  public:
-  static constexpr size_t overhead_size = sizeof(Initiation::public_key_a_type::size_type) +
-                                          sizeof(Initiation::public_key_b_type::size_type) +
-                                          sizeof(Initiation::public_key_b_mac_type::size_type);
+  static constexpr size_t static_size = sizeof(Initiation::public_key_a_type::size_type) +
+                                        sizeof(Initiation::public_key_b_type::size_type) +
+                                        sizeof(Initiation::public_key_b_mac_type::size_type);
 
  public:
-  BufferBuilder() : data_size_(0) {}
+  BufferBuilder() : dynamic_size_(0) {}
 
   auto build() { return std::vector<uint8_t>(buffer_size()); };
 
-  size_t buffer_size() { return overhead_size + data_size(); }
+  size_t buffer_size() { return static_size + dynamic_size(); }
 
-  size_t data_size() {
+  size_t dynamic_size() {
     static_assert((std::is_same_v<Tags, BufferBuilderTag<0>> || ...),
                   "public key a size is not set");
     static_assert((std::is_same_v<Tags, BufferBuilderTag<1>> || ...),
@@ -102,7 +102,7 @@ class BufferBuilder<Initiation, Tags...> {
     static_assert((std::is_same_v<Tags, BufferBuilderTag<2>> || ...),
                   "public key b mac size is not set");
 
-    return data_size_;
+    return dynamic_size_;
   }
 
   [[nodiscard]] auto set_public_key_a_size(size_t size) {
@@ -113,7 +113,7 @@ class BufferBuilder<Initiation, Tags...> {
              "public key a size is too big");
 
     return BufferBuilder<Initiation, BufferBuilderTag<0>, Tags...>{
-        data_size_ + sizeof(Initiation::public_key_a_type::data_type) * size};
+        dynamic_size_ + sizeof(Initiation::public_key_a_type::data_type) * size};
   }
 
   [[nodiscard]] auto set_public_key_b_size(size_t size) {
@@ -124,7 +124,7 @@ class BufferBuilder<Initiation, Tags...> {
              "public key b size is too big");
 
     return BufferBuilder<Initiation, BufferBuilderTag<1>, Tags...>{
-        data_size_ + sizeof(Initiation::public_key_b_type::data_type) * size};
+        dynamic_size_ + sizeof(Initiation::public_key_b_type::data_type) * size};
   }
 
   [[nodiscard]] auto set_public_key_b_mac_size(size_t size) {
@@ -135,14 +135,14 @@ class BufferBuilder<Initiation, Tags...> {
              "public key b mac size is too big");
 
     return BufferBuilder<Initiation, BufferBuilderTag<2>, Tags...>{
-        data_size_ + sizeof(Initiation::public_key_b_mac_type::data_type) * size};
+        dynamic_size_ + sizeof(Initiation::public_key_b_mac_type::data_type) * size};
   }
 
  private:
-  BufferBuilder(size_t data_size) : data_size_(data_size) {}
+  BufferBuilder(size_t dynamic_size) : dynamic_size_(dynamic_size) {}
 
  private:
-  size_t data_size_;
+  size_t dynamic_size_;
 
  private:
   template <typename, typename...>

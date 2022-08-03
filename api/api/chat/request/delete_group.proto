@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package api.chat.request;
+
+message DeleteGroup {
+    uint64 id = 1;
+}

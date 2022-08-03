@@ -8,7 +8,7 @@ set(MDBX_BUILD_TOOLS OFF)
 
 FetchContent_Declare(
   mdbx
-  URL https://github.com/erthink/libmdbx/releases/download/v0.11.6/libmdbx-amalgamated-0_11_6.zip)
+  URL https://libmdbx.dqdkfa.ru/release/libmdbx-amalgamated-0_11_7.zip)
 
 FetchContent_MakeAvailable(mdbx)
 

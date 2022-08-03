@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api.user.response;
+
+message CreateConnection {
+    message Result {
+    }
+    message Error {
+        enum Code {
+            USER_NOT_FOUND = 0;
+            ALREADY_ESTABLISHED = 1;
+            ALREADY_PENDING = 2;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package api.chat.request;
+
+message GetMembers {
+    message Filter {
+        uint64 chat_id = 1;
+    }
+    Filter filter = 1;
+}

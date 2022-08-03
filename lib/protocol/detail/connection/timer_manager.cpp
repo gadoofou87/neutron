@@ -123,7 +123,7 @@ void TimerManager::start_helper(std::chrono::milliseconds expiry_time) {
         if (error) {
           return;
         }
-        if (auto parent = weak_parent.lock()) {
+        if (auto parent = weak_parent.lock()) [[likely]] {
           async_wait_timer_handler<Id>(*parent);
         }
       }));

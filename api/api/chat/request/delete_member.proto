@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package api.chat.request;
+
+message DeleteMember {
+    uint64 chat_id = 1;
+    uint64 user_id = 2;
+}

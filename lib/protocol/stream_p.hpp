@@ -28,7 +28,7 @@ class StreamPrivate {
 
   [[nodiscard]] bool is_readable_unordered() const;
 
-  size_t max_payload_size() const;
+  [[nodiscard]] size_t max_payload_size() const;
 
  public:
   ConnectionPrivate &connection_private;

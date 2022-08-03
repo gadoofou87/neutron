@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package api;
+
+enum ExceptionCode {
+    INTERNAL_SERVER_ERROR = 0;
+}

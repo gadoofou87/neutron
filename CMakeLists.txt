@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_CLIENT "" ON)
+option(BUILD_CONTROLLER "" ON)
 option(BUILD_SERVER "" ON)
 option(BUILD_TESTING "" OFF)
 
@@ -24,7 +25,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(NOT CMAKE_UNITY_BUILD)
-  set(CMAKE_UNITY_BUILD ON)
+  #set(CMAKE_UNITY_BUILD ON)
 endif()
 
 find_program(CCACHE_FOUND ccache)
@@ -37,11 +38,13 @@ endif()
 find_package(Threads)
 
 add_subdirectory(3rdparty)
+add_subdirectory(api)
 
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Wpedantic)
 add_compile_options(-Werror)
+add_compile_options(-Wno-unused-parameter)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
   add_compile_options(-g)
@@ -88,6 +91,10 @@ add_subdirectory(lib)
 
 if(BUILD_CLIENT)
   add_subdirectory(client)
+endif()
+
+if(BUILD_CONTROLLER)
+  add_subdirectory(controller)
 endif()
 
 if(BUILD_SERVER)

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "api/encrypted_data.proto";
+
+package api.chat;
+
+message Message {
+    api.EncryptedData data = 1;
+}

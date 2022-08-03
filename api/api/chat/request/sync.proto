@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package api.chat.request;
+
+message Sync {
+    uint64 chat_id = 1;
+    optional uint64 last_event_id = 2;
+    uint32 count = 3;
+}

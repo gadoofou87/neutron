@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package api.user.request;
+
+message SignUp {
+    string username = 1;
+    string password = 2;
+}

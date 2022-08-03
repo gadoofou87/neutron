@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api.chat.response;
+
+message DeleteGroup {
+    message Result {
+    }
+    message Error {
+        enum Code {
+            CHAT_NOT_FOUND = 0;
+            YOU_ARE_NOT_MEMBER = 2;
+            PERMISSION_DENIED = 3;
+        }
+        Code code = 1;
+    }
+    optional Result result = 1;
+    optional Error error = 2;
+}

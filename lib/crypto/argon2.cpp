@@ -24,23 +24,23 @@ argon2_type to_argon2_type(Argon2::Type type) {
 
 }  // namespace
 
-std::string Argon2::hash(std::string_view password, const Configuration &config) {
-  auto type = to_argon2_type(config.type);
-
+std::string Argon2::hash(std::string_view password, Type type, const Configuration &config) {
   std::vector<uint8_t> salt(config.saltlen);
 
   Helpers::randombytes_buf(salt.data(), salt.size());
 
   std::string encoded;
 
+  auto argon2_type = to_argon2_type(type);
+
   encoded.resize(argon2_encodedlen(config.t_cost, config.m_cost, config.parallelism, config.saltlen,
-                                   config.hashlen, type));
+                                   config.hashlen, argon2_type));
 
   auto ret = argon2_hash(config.t_cost, config.m_cost, config.parallelism, password.data(),
                          password.size(), salt.data(), salt.size(), nullptr, 0, encoded.data(),
-                         encoded.size(), type, ARGON2_VERSION_NUMBER);
+                         encoded.size(), argon2_type, ARGON2_VERSION_NUMBER);
 
-  if (ret != ARGON2_OK) {
+  if (ret != ARGON2_OK) [[unlikely]] {
     throw std::runtime_error(argon2_error_message(ret));
   }
 
@@ -51,11 +51,10 @@ bool Argon2::verify(std::string_view encoded, std::string_view password, Type ty
   auto ret = argon2_verify(encoded.data(), password.data(), password.size(), to_argon2_type(type));
 
   if (ret != ARGON2_OK) {
-    if (ret == ARGON2_VERIFY_MISMATCH) {
+    if (ret == ARGON2_VERIFY_MISMATCH) [[likely]] {
       return false;
-    } else {
-      throw std::runtime_error(argon2_error_message(ret));
     }
+    throw std::runtime_error(argon2_error_message(ret));
   }
 
   return true;
