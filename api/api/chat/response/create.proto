@@ -1,15 +1,12 @@
 syntax = "proto3";
 
-package api.user.response;
+package api.chat.response;
 
-message GetInfo {
+message Create {
     message Result {
+        uint64 id = 1;
     }
     message Error {
-        enum Code {
-            USER_NOT_FOUND = 0;
-        }
-        Code code = 1;
     }
     optional Result result = 1;
     optional Error error = 2;

@@ -1,11 +1,7 @@
 #pragma once
 
-#include <limits>
-#include <vector>
-
 #include "../types/connection_id.hpp"
 #include "serialization/buffer_builder.hpp"
-#include "serialization/packed_dynamic_array.hpp"
 #include "serialization/packed_integer.hpp"
 #include "serialization/packed_struct.hpp"
 

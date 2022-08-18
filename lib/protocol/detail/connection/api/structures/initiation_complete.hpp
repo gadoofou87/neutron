@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vector>
-
 #include "serialization/packed_struct.hpp"
 
 namespace protocol {

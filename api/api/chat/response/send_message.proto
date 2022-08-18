@@ -9,7 +9,7 @@ message SendMessage {
         enum Code {
             CHAT_NOT_FOUND = 0;
             YOU_ARE_NOT_MEMBER = 1;
-            CONNECTION_NOT_FOUND = 2;
+            CHAT_IS_DELETED = 2;
         }
         Code code = 1;
     }

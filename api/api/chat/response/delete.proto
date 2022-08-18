@@ -2,14 +2,15 @@ syntax = "proto3";
 
 package api.chat.response;
 
-message DeleteGroup {
+message Delete {
     message Result {
     }
     message Error {
         enum Code {
             CHAT_NOT_FOUND = 0;
             YOU_ARE_NOT_MEMBER = 2;
-            PERMISSION_DENIED = 3;
+            INSUFFICIENT_RIGHTS = 3;
+            CHAT_IS_ALREADY_DELETED = 4;
         }
         Code code = 1;
     }

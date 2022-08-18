@@ -5,7 +5,7 @@
 #include <span>
 #include <vector>
 
-#include "api/structures/chunk.hpp"
+#include "api/types/chunk_type.hpp"
 #include "utils/abstract/iresetable.hpp"
 #include "utils/parentable.hpp"
 
@@ -37,8 +37,8 @@ class PacketBuilder : public utils::Parentable<ConnectionPrivate>, utils::IReset
   void set_mtu(Mtu mtu);
 
  private:
-  template <bool Encrypted>
-  BuildOutput build(std::list<std::vector<uint8_t>>&& chunks);
+  template <bool Encrypted, typename OutputIt>
+  BuildOutput build(std::list<std::vector<uint8_t>>&& chunks, OutputIt output_iterator);
 
   std::vector<uint8_t> build_chunk_list(std::list<std::vector<uint8_t>>& chunks,
                                         size_t cached_max_chunk_list_size);

@@ -2,16 +2,19 @@ syntax = "proto3";
 
 package api.user.response;
 
-message GetConnections {
+message GetDevices {
     message Result {
         message Value {
-            uint64 initiator_user_id = 1;
-            uint64 responder_user_id = 2;
-            bool established = 3;
+            uint32 id = 1;
+            bytes public_key = 2;
         }
         repeated Value values = 1;
     }
     message Error {
+        enum Code {
+            USER_NOT_FOUND = 0;
+        }
+        Code code = 1;
     }
     optional Result result = 1;
     optional Error error = 2;

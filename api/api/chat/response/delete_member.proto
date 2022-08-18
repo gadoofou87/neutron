@@ -10,7 +10,8 @@ message DeleteMember {
             CHAT_NOT_FOUND = 0;
             YOU_ARE_NOT_MEMBER = 1;
             INSUFFICIENT_RIGHTS = 2;
-            USER_IS_NOT_MEMBER = 3;
+            CHAT_IS_DELETED = 3;
+            USER_IS_NOT_MEMBER = 4;
         }
         Code code = 1;
     }

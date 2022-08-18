@@ -4,8 +4,6 @@
 #include "api/structures/chunk_list.hpp"
 #include "api/structures/encrypted_packet_data.hpp"
 #include "api/structures/packet.hpp"
-#include "api/structures/payload_data.hpp"
-#include "api/structures/selective_acknowledgement.hpp"
 #include "connection_p.hpp"
 #include "utils/debug/assert.hpp"
 #include "utils/span/copy.hpp"
@@ -33,8 +31,9 @@ bool is_encryptable(ChunkType type) {
 PacketBuilder::PacketBuilder(parent_type& parent)
     : utils::Parentable<parent_type>(parent), mtu_(MTU_DEFAULT) {}
 
-template <bool Encrypted>
-PacketBuilder::BuildOutput PacketBuilder::build(std::list<std::vector<uint8_t>>&& chunks) {
+template <bool Encrypted, typename OutputIt>
+PacketBuilder::BuildOutput PacketBuilder::build(std::list<std::vector<uint8_t>>&& chunks,
+                                                OutputIt output_iterator) {
   BuildOutput result;
 
   const size_t max_chunk_list_size =
@@ -46,9 +45,9 @@ PacketBuilder::BuildOutput PacketBuilder::build(std::list<std::vector<uint8_t>>&
     if constexpr (Encrypted) {
       auto encrypted_packet_data_buffer = build_encrypted_packet_data(std::move(chunk_list_buffer));
 
-      result.push_back(build_packet(std::move(encrypted_packet_data_buffer), true));
+      *output_iterator++ = build_packet(std::move(encrypted_packet_data_buffer), true);
     } else {
-      result.push_back(build_packet(std::move(chunk_list_buffer), false));
+      *output_iterator++ = build_packet(std::move(chunk_list_buffer), false);
     }
   }
 
@@ -59,21 +58,21 @@ PacketBuilder::BuildOutput PacketBuilder::build(BuildInput&& input) {
   std::list<std::vector<uint8_t>> e;
   std::list<std::vector<uint8_t>> u;
 
-  for (auto iterator = input.begin(); iterator != input.end(); ++iterator) {
+  for (const auto& [type, data_ref] : input) {
     auto buffer =
-        serialization::BufferBuilder<Chunk>{}.set_data_size(iterator->second.get().size()).build();
+        serialization::BufferBuilder<Chunk>{}.set_data_size(data_ref.get().size()).build();
 
     Chunk chunk(buffer);
 
-    chunk.type() = iterator->first;
+    chunk.type() = type;
 
-    if (!iterator->second.get().empty()) {
-      utils::span::copy<uint8_t>(chunk.data(), iterator->second.get());
+    if (!data_ref.get().empty()) {
+      utils::span::copy<uint8_t>(chunk.data(), data_ref.get());
     }
 
     ASSERT(chunk.validate());
 
-    if (is_encryptable(iterator->first)) [[likely]] {
+    if (is_encryptable(type)) [[likely]] {
       e.insert(std::lower_bound(e.cbegin(), e.cend(), buffer), std::move(buffer));
     } else {
       u.insert(std::lower_bound(u.cbegin(), u.cend(), buffer), std::move(buffer));
@@ -82,11 +81,13 @@ PacketBuilder::BuildOutput PacketBuilder::build(BuildInput&& input) {
 
   BuildOutput result;
 
+  auto result_output_iterator = std::back_inserter(result);
+
   if (!u.empty()) {
-    result.splice(result.cend(), build<false>(std::move(u)));
+    build<false>(std::move(u), result_output_iterator);
   }
   if (!e.empty()) {
-    result.splice(result.cend(), build<true>(std::move(e)));
+    build<true>(std::move(e), result_output_iterator);
   }
 
   return result;

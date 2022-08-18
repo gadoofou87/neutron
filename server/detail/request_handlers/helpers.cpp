@@ -18,22 +18,22 @@
 
 namespace detail {
 
-uint64_t RequestHandler::Helpers::Chat::create_chat(api::chat::Type type) {
+void RequestHandler::Helpers::Chat::add_member(uint64_t chat_id, uint64_t user_id,
+                                               uint64_t first_accessible_event_id) {
   auto& impl = ServerImpl::instance();
 
   auto& connection = impl.database_manager.connection();
 
-  pqxx::work transaction(connection);
+  {
+    pqxx::work transaction(connection);
 
-  auto result = transaction.exec_params1(
-      "INSERT INTO chats (type) "
-      "VALUES ($1) "
-      "RETURNING id",
-      std::to_underlying(type));
+    transaction.exec_params(
+        "INSERT INTO chats_members (chat_id, user_id, first_accessible_event_id) "
+        "VALUES ($1, $2, $3)",
+        chat_id, user_id, first_accessible_event_id);
 
-  transaction.commit();
-
-  return result[0].as<int64_t>();
+    transaction.commit();
+  }
 }
 
 api::chat::Event RequestHandler::Helpers::Chat::create_event(
@@ -88,6 +88,20 @@ bool RequestHandler::Helpers::Chat::does_chat_exist(uint64_t chat_id) {
   transaction.commit();
 
   return !result.empty();
+}
+
+bool RequestHandler::Helpers::Chat::is_deleted(uint64_t chat_id) {
+  auto& impl = ServerImpl::instance();
+
+  auto& connection = impl.database_manager.connection();
+
+  pqxx::read_transaction transaction(connection);
+
+  auto result = transaction.exec_params1("SELECT deleted FROM CHATS WHERE id = $1", chat_id);
+
+  transaction.commit();
+
+  return result[0].as<bool>();
 }
 
 bool RequestHandler::Helpers::Chat::is_chat_member(uint64_t chat_id, uint64_t user_id) {
@@ -234,6 +248,30 @@ void RequestHandler::Helpers::Chat::rotate_keys(uint64_t chat_id,
 
   for (const auto& user_id : members_user_ids) {
     impl.client_manager.do_for_each(user_id, do_notify);
+  }
+}
+
+void RequestHandler::Helpers::Chat::set_owner(uint64_t chat_id, uint64_t user_id) {
+  auto& impl = ServerImpl::instance();
+
+  auto& connection = impl.database_manager.connection();
+
+  {
+    pqxx::work transaction(connection);
+
+    transaction.exec_params(
+        "UPDATE chats_members "
+        "SET owner = false "
+        "WHERE chat_id = $1 ",
+        chat_id);
+
+    transaction.exec_params(
+        "UPDATE chats_members "
+        "SET owner = true "
+        "WHERE chat_id = $1 ",
+        chat_id);
+
+    transaction.commit();
   }
 }
 

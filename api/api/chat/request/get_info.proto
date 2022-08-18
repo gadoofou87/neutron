@@ -2,5 +2,6 @@ syntax = "proto3";
 
 package api.chat.request;
 
-message CreateGroup {
+message GetInfo {
+    uint64 chat_id = 1;
 }

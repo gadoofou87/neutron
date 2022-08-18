@@ -4,11 +4,13 @@ package api.chat;
 
 message Event {
     enum Type {
-        KEY_ROTATE = 0;
-        MEMBER_ADDED = 1;
-        MEMBER_DELETED = 2;
-        MESSAGE_EDITED = 3;
-        NEW_MESSAGE = 4;
+        CHAT_CREATED = 0;
+        CHAT_DELETED = 1;
+        KEY_ROTATE = 2;
+        MEMBER_ADDED = 3;
+        MEMBER_DELETED = 4;
+        MESSAGE_EDITED = 5;
+        NEW_MESSAGE = 6;
     }
     uint64 id = 1;
     uint64 creation_timestamp = 2;

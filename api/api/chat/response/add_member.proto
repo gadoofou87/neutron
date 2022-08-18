@@ -11,8 +11,9 @@ message AddMember {
             USER_NOT_FOUND = 1;
             YOU_ARE_NOT_MEMBER = 2;
             INSUFFICIENT_RIGHTS = 3;
-            USER_IS_ALREADY_MEMBER = 4;
-            CONNECTION_NOT_FOUND = 5;
+            CHAT_IS_DELETED = 4;
+            USER_IS_ALREADY_MEMBER = 5;
+            CONNECTION_NOT_FOUND = 6;
         }
         Code code = 1;
     }

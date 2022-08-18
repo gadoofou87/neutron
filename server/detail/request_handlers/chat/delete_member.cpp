@@ -57,6 +57,15 @@ std::string RequestHandler::handle(const Client& client,
 
     return response.SerializeAsString();
   }
+  if (Helpers::Chat::is_deleted(request.chat_id())) {
+    api::chat::response::DeleteMember response;
+
+    auto* response_error = response.mutable_error();
+
+    response_error->set_code(api::chat::response::DeleteMember_Error_Code_CHAT_IS_DELETED);
+
+    return response.SerializeAsString();
+  }
 
   if (std::find(members_user_ids.begin(), members_user_ids.end(), request.user_id()) ==
       members_user_ids.end()) {

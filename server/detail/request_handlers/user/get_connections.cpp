@@ -51,11 +51,11 @@ std::string RequestHandler::handle(const Client& client,
     auto* response_result = response.mutable_result();
 
     for (const auto& row : result) {
-      auto* connection = response_result->add_connections();
+      auto* value = response_result->add_values();
 
-      connection->set_initiator_user_id(row["initiator_user_id"].as<int64_t>());
-      connection->set_responder_user_id(row["responder_user_id"].as<int64_t>());
-      connection->set_established(row["established"].as<bool>());
+      value->set_initiator_user_id(row["initiator_user_id"].as<int64_t>());
+      value->set_responder_user_id(row["responder_user_id"].as<int64_t>());
+      value->set_established(row["established"].as<bool>());
     }
   }
 

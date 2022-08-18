@@ -39,13 +39,15 @@ namespace detail {
 
 struct RequestHandler::Helpers {
   struct Chat {
-    static uint64_t create_chat(api::chat::Type type);
+    static void add_member(uint64_t chat_id, uint64_t user_id, uint64_t first_accessible_event_id);
 
     static api::chat::Event create_event(uint64_t chat_id, std::optional<uint64_t> owner_user_id,
                                          api::chat::Event_Type type,
                                          const google::protobuf::Message& message);
 
     static bool does_chat_exist(uint64_t chat_id);
+
+    static bool is_deleted(uint64_t chat_id);
 
     static bool is_chat_member(uint64_t chat_id, uint64_t user_id);
 
@@ -58,6 +60,8 @@ struct RequestHandler::Helpers {
     static void rotate_keys(uint64_t chat_id);
 
     static void rotate_keys(uint64_t chat_id, const std::vector<uint64_t>& members_user_ids);
+
+    static void set_owner(uint64_t chat_id, uint64_t user_id);
   };
   struct User {
     static api::Event create_event(api::user::Event_Type type,

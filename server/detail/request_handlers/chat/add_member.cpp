@@ -23,8 +23,6 @@ std::string RequestHandler::handle(const Client& client,
 
   auto& impl = ServerImpl::instance();
 
-  auto& connection = impl.database_manager.connection();
-
   if (!Helpers::Chat::does_chat_exist(request.chat_id())) {
     api::chat::response::AddMember response;
 
@@ -66,6 +64,15 @@ std::string RequestHandler::handle(const Client& client,
 
     return response.SerializeAsString();
   }
+  if (Helpers::Chat::is_deleted(request.chat_id())) {
+    api::chat::response::AddMember response;
+
+    auto* response_error = response.mutable_error();
+
+    response_error->set_code(api::chat::response::AddMember_Error_Code_CHAT_IS_DELETED);
+
+    return response.SerializeAsString();
+  }
 
   if (std::find(members_user_ids.begin(), members_user_ids.end(), request.user_id()) !=
       members_user_ids.end()) {
@@ -97,17 +104,10 @@ std::string RequestHandler::handle(const Client& client,
         request.chat_id(), client.user_id(), api::chat::Event_Type_MEMBER_ADDED, inner_chat_event);
 
     {
-      pqxx::work transaction(connection);
+      Helpers::Chat::add_member(request.chat_id(), client.user_id(), chat_event.id());
 
-      transaction.exec_params(
-          "INSERT INTO chats_members (chat_id, user_id, first_accessible_event_id) "
-          "VALUES ($1, $2, $3)",
-          request.chat_id(), request.user_id(), chat_event.id());
-
-      transaction.commit();
+      members_user_ids.push_back(request.user_id());
     }
-
-    members_user_ids.push_back(request.user_id());
 
     auto event = Helpers::create_event(api::Event_Type_CHAT, chat_event);
 

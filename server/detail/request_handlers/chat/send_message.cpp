@@ -46,6 +46,16 @@ std::string RequestHandler::handle(const Client& client,
     return response.SerializeAsString();
   }
 
+  if (Helpers::Chat::is_deleted(request.chat_id())) {
+    api::chat::response::SendMessage response;
+
+    auto* response_error = response.mutable_error();
+
+    response_error->set_code(api::chat::response::SendMessage_Error_Code_CHAT_IS_DELETED);
+
+    return response.SerializeAsString();
+  }
+
   {
     api::chat::event::NewMessage inner_chat_event;
 

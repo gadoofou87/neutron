@@ -17,8 +17,7 @@ void DatabaseManager::create_tables() {
   transaction.exec(
       "CREATE TABLE IF NOT EXISTS chats ("
       " id      bigserial NOT NULL, "
-      " type    integer   NOT NULL, "
-      " deleted boolean   NOT NULL  DEFAULT FALSE, "
+      " deleted boolean   NOT NULL  DEFAULT false, "
       " title   text, "
       " PRIMARY KEY (ID) "
       ")");
@@ -61,9 +60,10 @@ void DatabaseManager::create_tables() {
 
   transaction.exec(
       "CREATE TABLE IF NOT EXISTS users_devices ("
-      " id         serial NOT NULL, "
-      " user_id    bigint NOT NULL, "
-      " public_key bytea  NOT NULL, "
+      " id         serial  NOT NULL, "
+      " user_id    bigint  NOT NULL, "
+      " public_key bytea   NOT NULL, "
+      " revoked    boolean NOT NULL  DEFAULT false, "
       " PRIMARY KEY (id, user_id) "
       ")");
 

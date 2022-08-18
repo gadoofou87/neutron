@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package api.user.request;
+
+message GetDevices {
+    message Filter {
+        uint64 user_id = 1;
+        repeated uint32 device_ids = 2;
+        optional bool revoked = 3;
+    }
+    Filter filter = 1;
+}
